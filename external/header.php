@@ -33,25 +33,23 @@ class visibilitator
 // Only users from authorized IP addresses may control Profiling
 if ($controlIPs === false || in_array($_SERVER['REMOTE_ADDR'], $controlIPs) || PHP_SAPI == 'cli')
 {
-  if (isset($_GET['_profile']))
+  if (isset($_GET['_profile']) && $_GET['_profile'] || PHP_SAPI == 'cli' && ((isset($_SERVER['XHPROF_PROFILE']) && $_SERVER['XHPROF_PROFILE']) || (isset($_ENV['XHPROF_PROFILE']) && $_ENV['XHPROF_PROFILE'])))
   {
-    //Give them a cookie to hold status, and redirect back to the same page
-    setcookie('_profile', $_GET['_profile']);
-    $newURI = str_replace(array('_profile=1','_profile=0'), '', $_SERVER['REQUEST_URI']);
-    header("Location: $newURI");
-    exit;
-  }
-
-  if (isset($_COOKIE['_profile']) && $_COOKIE['_profile'] || PHP_SAPI == 'cli' && ((isset($_SERVER['XHPROF_PROFILE']) && $_SERVER['XHPROF_PROFILE']) || (isset($_ENV['XHPROF_PROFILE']) && $_ENV['XHPROF_PROFILE'])))
-  {
-      $_xhprof['display'] = true;
+      $_xhprof['display'] = false;
       $_xhprof['doprofile'] = true;
       $_xhprof['type'] = 1;
+
+      unset($_GET['_profile']);
+      if(isset($_SERVER['REQUEST_URI']))
+      {
+        $_SERVER['REQUEST_URI'] = str_replace( "&_profile=1", '', $_SERVER['REQUEST_URI'] );
+        $_SERVER['REQUEST_URI'] = str_replace( "?_profile=1", '', $_SERVER['REQUEST_URI'] );
+      }
   }
 }
 
 
-//Certain URLs should never have a link displayed. Think images, xml, etc. 
+//Certain URLs should never have a link displayed. Think images, xml, etc.
 foreach($exceptionURLs as $url)
 {
     if (stripos($_SERVER['REQUEST_URI'], $url) !== FALSE)
@@ -59,7 +57,7 @@ foreach($exceptionURLs as $url)
         $_xhprof['display'] = false;
         header('X-XHProf-No-Display: Trueness');
         break;
-    }    
+    }
 }
 unset($exceptionURLs);
 
@@ -71,7 +69,7 @@ foreach ($exceptionPostURLs as $url)
     {
         $_xhprof['savepost'] = false;
         break;
-    }    
+    }
 }
 unset($exceptionPostURLs);
 
@@ -83,7 +81,7 @@ if ($_xhprof['doprofile'] === false)
     {
         $_xhprof['doprofile'] = true;
         $_xhprof['type'] = 0;
-    } 
+    }
 }
 unset($weight);
 
